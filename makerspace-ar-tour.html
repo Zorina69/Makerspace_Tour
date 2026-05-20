@@ -5,10 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Makerspace AR Scanner</title>
 
-<!-- 1. A-Frame (3D/AR engine) -->
-<script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
-<!-- 2. MindAR (image tracking) -->
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+<!-- QR Code Scanner Library -->
+<script src="https://unpkg.com/html5-qrcode@2.20.10/dist/html5-qrcode.min.js"></script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap');
@@ -312,13 +310,13 @@ a-scene{width:100%!important;height:100%!important}
   <div class="splash-inner">
     <div class="badge">AR IMAGE SCANNER</div>
     <div class="main-title">MAKER<span class="acc">SPACE</span><br>AR TOUR</div>
-    <div class="sub">Point camera at any zone marker to explore</div>
+    <div class="sub">Scan QR codes to explore each zone</div>
 
     <div class="how-box">
       <div class="how-title">// HOW IT WORKS</div>
-      <div class="how-step"><div class="step-num">1</div><span>Print or display any zone marker image</span></div>
+      <div class="how-step"><div class="step-num">1</div><span>Print or display QR codes for each zone</span></div>
       <div class="how-step"><div class="step-num">2</div><span>Tap START and allow camera access</span></div>
-      <div class="how-step"><div class="step-num">3</div><span>Point camera at the marker — labels pop up instantly</span></div>
+      <div class="how-step"><div class="step-num">3</div><span>Point camera at any QR code — zone info pops up instantly</span></div>
       <div class="how-step"><div class="step-num">4</div><span>Tap any label to read info or hear the audio guide</span></div>
     </div>
 
@@ -336,154 +334,13 @@ a-scene{width:100%!important;height:100%!important}
   </div>
 </div>
 
-<!-- ═══════════════ AR SCENE ═══════════════ -->
+<!-- ═══════════════ QR SCANNER ═══════════════ -->
 <div id="ar-scene-container">
+  
+  <!-- QR Scanner Container -->
+  <div id="qr-reader" style="width:100%;height:100%;"></div>
 
-  <!--
-    MindAR A-Frame Scene
-    - Each <a-entity mindar-image-target="targetIndex: N"> matches marker image N
-      from the compiled targets.mind file.
-    - You generate targets.mind using MindAR compiler:
-      https://hiukim.github.io/mind-ar-js-doc/tools/compile
-      Upload your 6 marker images → download targets.mind → put next to this HTML file
-    - targetIndex 0 = first image you uploaded, 1 = second, etc.
-  -->
-  <a-scene
-    id="arScene"
-    mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no"
-    color-space="sRGB"
-    renderer="colorManagement: true, physicallyCorrectLights"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
-
-    <a-assets>
-      <!-- Preload font for 3D text -->
-      <a-asset-item id="optimer-font" src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/optimer_bold.typeface.json"></a-asset-item>
-    </a-assets>
-
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-    <!-- ── TARGET 0: WORKSHOP ── -->
-    <a-entity mindar-image-target="targetIndex: 0" id="target-workshop">
-      <!-- Glowing platform -->
-      <a-plane color="#00ff88" opacity="0.18" width="1" height="1" position="0 0 0" rotation="-90 0 0"></a-plane>
-      <!-- Main label panel -->
-      <a-entity position="0 0.4 0">
-        <a-plane color="#0a1a0a" opacity="0.92" width="0.9" height="0.28" position="0 0 0" border-radius="0.05"></a-plane>
-        <a-text value="WORKSHOP" color="#00ff88" align="center" width="2.2" position="0 0.04 0.01" font="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/optimer_bold.typeface.json"></a-text>
-        <a-text value="Fabrication Zone" color="#aaffcc" align="center" width="1.6" position="0 -0.06 0.01"></a-text>
-      </a-entity>
-      <!-- Tap trigger (invisible plane that catches raycaster) -->
-      <a-plane class="clickable" color="transparent" opacity="0.001" width="1" height="0.6" position="0 0.4 0.01" data-zone="workshop"></a-plane>
-      <!-- Corner accents -->
-      <a-entity position="-0.45 0 0.01">
-        <a-plane color="#00ff88" opacity="0.8" width="0.04" height="0.15" position="0 0 0"></a-plane>
-        <a-plane color="#00ff88" opacity="0.8" width="0.15" height="0.04" position="0.055 -0.055 0"></a-plane>
-      </a-entity>
-      <a-entity position="0.45 0 0.01">
-        <a-plane color="#00ff88" opacity="0.8" width="0.04" height="0.15" position="0 0 0"></a-plane>
-        <a-plane color="#00ff88" opacity="0.8" width="0.15" height="0.04" position="-0.055 -0.055 0"></a-plane>
-      </a-entity>
-    </a-entity>
-
-    <!-- ── TARGET 1: ROBOTIC ── -->
-    <a-entity mindar-image-target="targetIndex: 1" id="target-robotic">
-      <a-plane color="#00e5ff" opacity="0.18" width="1" height="1" position="0 0 0" rotation="-90 0 0"></a-plane>
-      <a-entity position="0 0.4 0">
-        <a-plane color="#001a20" opacity="0.92" width="0.9" height="0.28"></a-plane>
-        <a-text value="ROBOTIC" color="#00e5ff" align="center" width="2.2" position="0 0.04 0.01"></a-text>
-        <a-text value="Automation Zone" color="#aaeeff" align="center" width="1.6" position="0 -0.06 0.01"></a-text>
-      </a-entity>
-      <a-plane class="clickable" color="transparent" opacity="0.001" width="1" height="0.6" position="0 0.4 0.01" data-zone="robotic"></a-plane>
-      <a-entity position="-0.45 0 0.01">
-        <a-plane color="#00e5ff" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#00e5ff" opacity="0.8" width="0.15" height="0.04" position="0.055 -0.055 0"></a-plane>
-      </a-entity>
-      <a-entity position="0.45 0 0.01">
-        <a-plane color="#00e5ff" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#00e5ff" opacity="0.8" width="0.15" height="0.04" position="-0.055 -0.055 0"></a-plane>
-      </a-entity>
-    </a-entity>
-
-    <!-- ── TARGET 2: AWARD ── -->
-    <a-entity mindar-image-target="targetIndex: 2" id="target-award">
-      <a-plane color="#ffb300" opacity="0.18" width="1" height="1" position="0 0 0" rotation="-90 0 0"></a-plane>
-      <a-entity position="0 0.4 0">
-        <a-plane color="#1a1200" opacity="0.92" width="0.9" height="0.28"></a-plane>
-        <a-text value="AWARD" color="#ffb300" align="center" width="2.2" position="0 0.04 0.01"></a-text>
-        <a-text value="Achievements Zone" color="#ffe0aa" align="center" width="1.6" position="0 -0.06 0.01"></a-text>
-      </a-entity>
-      <a-plane class="clickable" color="transparent" opacity="0.001" width="1" height="0.6" position="0 0.4 0.01" data-zone="award"></a-plane>
-      <a-entity position="-0.45 0 0.01">
-        <a-plane color="#ffb300" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#ffb300" opacity="0.8" width="0.15" height="0.04" position="0.055 -0.055 0"></a-plane>
-      </a-entity>
-      <a-entity position="0.45 0 0.01">
-        <a-plane color="#ffb300" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#ffb300" opacity="0.8" width="0.15" height="0.04" position="-0.055 -0.055 0"></a-plane>
-      </a-entity>
-    </a-entity>
-
-    <!-- ── TARGET 3: COMPONENT ── -->
-    <a-entity mindar-image-target="targetIndex: 3" id="target-component">
-      <a-plane color="#a855f7" opacity="0.18" width="1" height="1" position="0 0 0" rotation="-90 0 0"></a-plane>
-      <a-entity position="0 0.4 0">
-        <a-plane color="#0f0018" opacity="0.92" width="0.9" height="0.28"></a-plane>
-        <a-text value="COMPONENT" color="#a855f7" align="center" width="2.2" position="0 0.04 0.01"></a-text>
-        <a-text value="Inventory Zone" color="#ddaaff" align="center" width="1.6" position="0 -0.06 0.01"></a-text>
-      </a-entity>
-      <a-plane class="clickable" color="transparent" opacity="0.001" width="1" height="0.6" position="0 0.4 0.01" data-zone="component"></a-plane>
-      <a-entity position="-0.45 0 0.01">
-        <a-plane color="#a855f7" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#a855f7" opacity="0.8" width="0.15" height="0.04" position="0.055 -0.055 0"></a-plane>
-      </a-entity>
-      <a-entity position="0.45 0 0.01">
-        <a-plane color="#a855f7" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#a855f7" opacity="0.8" width="0.15" height="0.04" position="-0.055 -0.055 0"></a-plane>
-      </a-entity>
-    </a-entity>
-
-    <!-- ── TARGET 4: PROJECT ── -->
-    <a-entity mindar-image-target="targetIndex: 4" id="target-project">
-      <a-plane color="#ff4da6" opacity="0.18" width="1" height="1" position="0 0 0" rotation="-90 0 0"></a-plane>
-      <a-entity position="0 0.4 0">
-        <a-plane color="#1a0010" opacity="0.92" width="0.9" height="0.28"></a-plane>
-        <a-text value="PROJECT" color="#ff4da6" align="center" width="2.2" position="0 0.04 0.01"></a-text>
-        <a-text value="Showcase Zone" color="#ffaacc" align="center" width="1.6" position="0 -0.06 0.01"></a-text>
-      </a-entity>
-      <a-plane class="clickable" color="transparent" opacity="0.001" width="1" height="0.6" position="0 0.4 0.01" data-zone="project"></a-plane>
-      <a-entity position="-0.45 0 0.01">
-        <a-plane color="#ff4da6" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#ff4da6" opacity="0.8" width="0.15" height="0.04" position="0.055 -0.055 0"></a-plane>
-      </a-entity>
-      <a-entity position="0.45 0 0.01">
-        <a-plane color="#ff4da6" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#ff4da6" opacity="0.8" width="0.15" height="0.04" position="-0.055 -0.055 0"></a-plane>
-      </a-entity>
-    </a-entity>
-
-    <!-- ── TARGET 5: COMMUNITY ── -->
-    <a-entity mindar-image-target="targetIndex: 5" id="target-community">
-      <a-plane color="#ff3b3b" opacity="0.18" width="1" height="1" position="0 0 0" rotation="-90 0 0"></a-plane>
-      <a-entity position="0 0.4 0">
-        <a-plane color="#1a0000" opacity="0.92" width="0.9" height="0.28"></a-plane>
-        <a-text value="COMMUNITY" color="#ff3b3b" align="center" width="2.2" position="0 0.04 0.01"></a-text>
-        <a-text value="People Zone" color="#ffaaaa" align="center" width="1.6" position="0 -0.06 0.01"></a-text>
-      </a-entity>
-      <a-plane class="clickable" color="transparent" opacity="0.001" width="1" height="0.6" position="0 0.4 0.01" data-zone="community"></a-plane>
-      <a-entity position="-0.45 0 0.01">
-        <a-plane color="#ff3b3b" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#ff3b3b" opacity="0.8" width="0.15" height="0.04" position="0.055 -0.055 0"></a-plane>
-      </a-entity>
-      <a-entity position="0.45 0 0.01">
-        <a-plane color="#ff3b3b" opacity="0.8" width="0.04" height="0.15"></a-plane>
-        <a-plane color="#ff3b3b" opacity="0.8" width="0.15" height="0.04" position="-0.055 -0.055 0"></a-plane>
-      </a-entity>
-    </a-entity>
-
-  </a-scene>
-
-  <!-- HUD over AR -->
+  <!-- HUD overlay on top of Scanner -->
   <div id="hud">
     <div id="hudTop">
       <span class="hud-title">MAKERSPACE AR</span>
@@ -496,7 +353,7 @@ a-scene{width:100%!important;height:100%!important}
       <div class="sf-corner bl"></div>
       <div class="sf-corner br"></div>
       <div class="scan-line"></div>
-      <div class="scan-label">POINT AT ZONE MARKER</div>
+      <div class="scan-label">POINT AT QR CODE</div>
     </div>
 
     <div id="hudBottom">
@@ -505,7 +362,7 @@ a-scene{width:100%!important;height:100%!important}
     </div>
   </div>
 
-  <div id="detectedBadge">MARKER DETECTED</div>
+  <div id="detectedBadge">QR CODE DETECTED</div>
 </div>
 
 <!-- ═══════════════ POPUP ═══════════════ -->
@@ -659,50 +516,68 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
-/* ── MindAR INIT ── */
+/* ── QR CODE SCANNER INIT ── */
+var qrScanner = null;
+var lastDetectedQR = null;
+var qrCooldownTimer = null;
+
 function initAR() {
-  var scene = document.getElementById("arScene");
-
-  scene.addEventListener("arReady", function() {
-    console.log("MindAR ready");
+  // Map QR codes to zones: generate these QR codes containing the zone key
+  // workshop, robotic, award, component, project, community
+  
+  var qrReaderContainer = document.getElementById("qr-reader");
+  
+  qrScanner = new Html5Qrcode("qr-reader");
+  
+  qrScanner.start(
+    { facingMode: "environment" }, // Use back camera
+    {
+      fps: 10,
+      qrbox: { width: 250, height: 250 }
+    },
+    function(decodedText, decodedResult) {
+      // Trim whitespace from QR code content
+      var zoneKey = decodedText.trim().toLowerCase();
+      
+      // Check if this QR code matches a known zone
+      if (ZONES[zoneKey]) {
+        // Prevent duplicate detections within 2 seconds
+        if (lastDetectedQR === zoneKey && qrCooldownTimer) return;
+        
+        lastDetectedQR = zoneKey;
+        showDetectedBadge(ZONES[zoneKey].name);
+        openZone(zoneKey);
+        
+        var rec = document.querySelector(".hud-rec span");
+        if (rec) rec.textContent = "LOCKED";
+        
+        // Set cooldown to prevent rapid re-triggers
+        clearTimeout(qrCooldownTimer);
+        qrCooldownTimer = setTimeout(function() {
+          lastDetectedQR = null;
+        }, 2000);
+      }
+    },
+    function(error) {
+      // Suppress console spam for non-QR codes
+      // console.log(error);
+    }
+  ).catch(function(err) {
+    console.error("QR Scanner Error:", err);
   });
-
-  /* Listen for each target found/lost */
-  var zoneKeys = ["workshop","robotic","award","component","project","community"];
-  zoneKeys.forEach(function(key, idx) {
-    var targetEl = document.getElementById("target-" + key);
-    if (!targetEl) return;
-
-    targetEl.addEventListener("targetFound", function() {
-      showDetectedBadge(ZONES[key].name);
-      openZone(key);
-      var rec = document.querySelector(".hud-rec span");
-      if (rec) rec.textContent = "LOCKED";
-    });
-
-    targetEl.addEventListener("targetLost", function() {
-      var rec = document.querySelector(".hud-rec span");
-      if (rec) rec.textContent = "SCANNING";
-    });
-
-    /* Tap on 3D plane triggers popup */
-    targetEl.querySelectorAll(".clickable").forEach(function(plane) {
-      plane.addEventListener("click", function() {
-        openZone(plane.getAttribute("data-zone"));
-      });
-    });
-  });
-
-  /* Start MindAR */
-  var sys = scene.systems["mindar-image-system"];
-  if (sys) sys.start();
 }
 
 function stopAR() {
-  var scene = document.getElementById("arScene");
-  var sys = scene.systems["mindar-image-system"];
-  if (sys) sys.stop();
+  if (qrScanner) {
+    qrScanner.stop().then(function() {
+      qrScanner = null;
+    }).catch(function(err) {
+      console.error("Error stopping QR scanner:", err);
+    });
+  }
   closePopup();
+  var rec = document.querySelector(".hud-rec span");
+  if (rec) rec.textContent = "SCANNING";
 }
 
 /* ── DETECTED BADGE ── */
@@ -809,42 +684,42 @@ function closeSlideModal() {
 
 <!--
 =======================================================
-  SETUP GUIDE — READ THIS BEFORE HOSTING
+  SETUP GUIDE — QR CODE SCANNER VERSION
 =======================================================
 
-STEP 1 — CREATE YOUR MARKER IMAGES
-  Make 6 distinct images, one per zone. Good markers:
-  - Have lots of detail/contrast (logos, patterns, text)
-  - Are NOT symmetrical
-  - Examples: print the zone name in big bold letters on a
-    colored background, or use your makerspace logo variants.
+STEP 1 — GENERATE QR CODES FOR EACH ZONE
+  Create 6 QR codes, each containing the zone name:
+  - QR Code 1: contains text "workshop"
+  - QR Code 2: contains text "robotic"
+  - QR Code 3: contains text "award"
+  - QR Code 4: contains text "component"
+  - QR Code 5: contains text "project"
+  - QR Code 6: contains text "community"
+  
+  Free QR generators: qr-server.com, qrcode.tec-it.com, zxing.org
 
-STEP 2 — COMPILE TO targets.mind
-  Go to: https://hiukim.github.io/mind-ar-js-doc/tools/compile
-  Upload all 6 images IN THIS ORDER:
-    1. Workshop marker
-    2. Robotic marker
-    3. Award marker
-    4. Component marker
-    5. Project marker
-    6. Community marker
-  Download the resulting targets.mind file.
+STEP 2 — PRINT THE QR CODES
+  Print each QR code in good quality (at least 5x5 cm).
+  Stick or display them in their respective zones.
+  Make sure they're readable and well-lit.
 
-STEP 3 — HOST THE FILES
-  Put these 3 files in the same folder on your web server:
-    - makerspace-ar-tour.html  (this file)
-    - targets.mind             (from step 2)
-  Use HTTPS — camera only works on secure connections!
-  Free options: GitHub Pages, Netlify, Vercel
+STEP 3 — HOST THE FILE
+  Put the HTML file on a web server with HTTPS enabled:
+  - GitHub Pages, Netlify, Vercel, or your own HTTPS server
+  - Camera access requires a secure connection (HTTPS)
 
-STEP 4 — PRINT YOUR MARKERS
-  Print each zone marker image and stick it on the wall,
-  desk, or shelf for that zone. At least A5 size (half A4).
-
-STEP 5 — TEST
+STEP 4 — TEST
   Open the HTTPS URL on your phone.
   Tap OPEN CAMERA, allow camera access.
-  Point at a printed marker — the 3D label pops up!
+  Point at any QR code — the zone info pops up instantly!
+  Tap the popup to read more, hear audio, or see slides.
+
+TIPS:
+  - Make sure lighting is good around the QR codes
+  - Keep QR codes clean and undamaged
+  - Hold phone at a slight angle for best detection
+  - The scanner will automatically cooldown for 2 seconds
+    after detecting a QR to prevent duplicate triggers
 =======================================================
 -->
 
