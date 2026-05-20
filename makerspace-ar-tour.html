@@ -337,8 +337,16 @@ a-scene{width:100%!important;height:100%!important}
 <!-- ═══════════════ QR SCANNER ═══════════════ -->
 <div id="ar-scene-container">
   
-  <!-- QR Scanner Container -->
-  <div id="qr-reader" style="width:100%;height:100%;"></div>
+  <!-- QR Scanner Container with proper styling -->
+  <div id="qr-reader" style="
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  "></div>
 
   <!-- HUD overlay on top of Scanner -->
   <div id="hud">
@@ -522,23 +530,40 @@ var lastDetectedQR = null;
 var qrCooldownTimer = null;
 
 function initAR() {
-  var qrReaderContainer = document.getElementById("qr-reader");
+  console.log("🔍 Initializing QR Scanner...");
+  
+  // Test if camera access works
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function(stream) {
+      console.log("✅ CAMERA ACCESS GRANTED!");
+      // Stop the test stream
+      stream.getTracks().forEach(function(track) { track.stop(); });
+      startQRScanner();
+    })
+    .catch(function(err) {
+      console.error("❌ CAMERA ACCESS DENIED:", err.name, err.message);
+      alert("⚠️ Camera access blocked!\n\n" + err.message + "\n\nSolutions:\n1. Use HTTPS (not localhost)\n2. Or check browser camera permissions\n3. Or try pushing to GitHub Pages");
+    });
+}
+
+function startQRScanner() {
+  console.log("🚀 Starting HTML5 QR Scanner...");
   
   qrScanner = new Html5Qrcode("qr-reader");
   
   qrScanner.start(
-    { facingMode: "environment" }, // Use back camera
+    { facingMode: "environment" },
     {
       fps: 10,
       qrbox: { width: 250, height: 250 }
     },
-    function(decodedText, decodedResult) {
-      // Trim whitespace from QR code content
+    function onScanSuccess(decodedText, decodedResult) {
       var zoneKey = decodedText.trim().toLowerCase();
+      console.log("📱 QR Scanned:", decodedText, "→", zoneKey);
       
-      // Check if this QR code matches a known zone
       if (ZONES[zoneKey]) {
-        // Prevent duplicate detections within 2 seconds
+        console.log("✅ Zone found:", zoneKey);
+        
         if (lastDetectedQR === zoneKey && qrCooldownTimer) return;
         
         lastDetectedQR = zoneKey;
@@ -548,26 +573,25 @@ function initAR() {
         var rec = document.querySelector(".hud-rec span");
         if (rec) rec.textContent = "LOCKED";
         
-        // Set cooldown to prevent rapid re-triggers
         clearTimeout(qrCooldownTimer);
         qrCooldownTimer = setTimeout(function() {
           lastDetectedQR = null;
         }, 2000);
       }
     },
-    function(error) {
-      // Suppress console spam for non-QR codes
-      // console.log(error);
+    function onScanError(errorMessage) {
+      // Suppress scan errors
     }
   ).catch(function(err) {
-    console.error("QR Scanner Error:", err);
+    console.error("❌ Scanner Error:", err);
   });
 }
 
 function stopAR() {
+  console.log("Stopping QR Scanner...");
   if (qrScanner) {
     qrScanner.stop().then(function() {
-      console.log("QR scanner stopped");
+      console.log("✓ QR scanner stopped");
       qrScanner = null;
     }).catch(function(err) {
       console.error("Error stopping QR scanner:", err);
