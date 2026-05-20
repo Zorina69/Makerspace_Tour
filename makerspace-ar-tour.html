@@ -522,9 +522,22 @@ var lastDetectedQR = null;
 var qrCooldownTimer = null;
 
 function initAR() {
-  // Map QR codes to zones: generate these QR codes containing the zone key
-  // workshop, robotic, award, component, project, community
-  
+  // Request camera permission first
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(function(stream) {
+      // Stop the stream immediately - we just wanted to request permission
+      stream.getTracks().forEach(function(track) { track.stop(); });
+      
+      // Now start the QR scanner
+      startQRScanner();
+    })
+    .catch(function(err) {
+      console.error("Camera permission denied:", err);
+      alert("Camera access denied. Please allow camera access to use the scanner.\n\nGo to Settings > Permissions > Camera and enable it.");
+    });
+}
+
+function startQRScanner() {
   var qrReaderContainer = document.getElementById("qr-reader");
   
   qrScanner = new Html5Qrcode("qr-reader");
@@ -564,15 +577,18 @@ function initAR() {
     }
   ).catch(function(err) {
     console.error("QR Scanner Error:", err);
+    alert("Could not start camera scanner. Make sure you granted camera permission.");
   });
 }
 
 function stopAR() {
   if (qrScanner) {
     qrScanner.stop().then(function() {
+      console.log("QR scanner stopped");
       qrScanner = null;
     }).catch(function(err) {
       console.error("Error stopping QR scanner:", err);
+      qrScanner = null;
     });
   }
   closePopup();
