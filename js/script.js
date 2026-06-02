@@ -248,16 +248,42 @@ function showDetectedBadge(name) {
 }
 
 /* ── ZONE POPUP ── */
+function getYouTubeEmbedUrl(url) {
+  if (!url) return null;
+  var m = url.match(/(?:youtu\.be\/|v=)([a-zA-Z0-9_-]{11})/);
+  return m ? "https://www.youtube.com/embed/" + m[1] + "?playsinline=1" : null;
+}
+
 function openZone(key) {
   var z = ZONES[key];
   if (!z) return;
   activeZone = key;
-  
-  var zoneName = t(key + ".name");
-  var zoneTag = t(key + ".tag");
-  var zoneDesc = t(key + ".desc");
+
+  /* ── Look up matching exhibit data by zone key or by matching ID/name ── */
+  var ex = null;
+  /* Try direct key match first (e.g. QR code value = exhibit ID) */
+  if (EXHIBITS[key.toUpperCase()]) {
+    ex = EXHIBITS[key.toUpperCase()];
+  } else {
+    /* Fallback: find exhibit whose category matches the zone */
+    var exKeys = Object.keys(EXHIBITS);
+    for (var i = 0; i < exKeys.length; i++) {
+      if (exKeys[i].toLowerCase() === key.toLowerCase()) {
+        ex = EXHIBITS[exKeys[i]];
+        break;
+      }
+    }
+  }
+
+  var zoneName  = t(key + ".name");
+  var zoneTag   = t(key + ".tag");
+  var zoneDesc  = ex
+    ? (selectedLanguage === "english" ? ex.descEng : ex.descKhm)
+    : t(key + ".desc");
 
   var bgC = z.color + "18";
+
+  /* ── Header ── */
   document.getElementById("popupHead").innerHTML =
     '<div class="popup-icon-box" style="background:' + bgC + ';border:1px solid ' + z.color + '44">' + z.emoji + '</div>' +
     '<div><div class="popup-zone-name" style="color:' + z.color + '">' + zoneName + '</div>' +
@@ -265,48 +291,158 @@ function openZone(key) {
     '<button class="popup-close" id="popupCloseBtn">&#10005;</button>';
   document.getElementById("popupCloseBtn").addEventListener("click", closePopup);
 
-  document.getElementById("popupHero").style.background = bgC;
-  document.getElementById("popupHero").textContent = z.emoji;
+  /* ── Hero: image gallery + YouTube ── */
+  var heroEl = document.getElementById("popupHero");
+  heroEl.style.background = bgC;
+  heroEl.innerHTML = "";          /* clear old emoji */
 
-  var audioHTML = '<div class="audio-row" id="audioRowEl" style="border-color:' + z.color + '55">' +
-    '<div class="audio-play-icon">🔊</div>' +
-    '<div class="audio-info"><div class="audio-title">' + t("audioGuide") + '</div><div class="audio-sub">' + t("tapToHear") + '</div></div>' +
-    '<div class="wave">' +
-    '<div class="wb" style="background:' + z.color + '"></div>' +
-    '<div class="wb" style="background:' + z.color + '"></div>' +
-    '<div class="wb" style="background:' + z.color + '"></div>' +
-    '<div class="wb" style="background:' + z.color + '"></div>' +
-    '</div></div>';
+  if (ex) {
+    var imgArr = Array.isArray(ex.image) ? ex.image : (ex.image ? [ex.image] : []);
+    var embedUrl = getYouTubeEmbedUrl(ex.youtubeVideo);
 
-  var slidesHTML = '';
+    if (imgArr.length > 0) {
+      var imgEl = document.createElement("img");
+      imgEl.src = imgArr[0];
+      imgEl.alt = ex.name;
+      imgEl.className = "popup-hero-img";
+      imgEl.onerror = function() {
+        imgEl.style.display = "none";
+        heroEl.style.fontSize = "4.5rem";
+        heroEl.textContent = ex.emoji;
+      };
+      heroEl.style.fontSize = "";
+      heroEl.appendChild(imgEl);
+
+      /* dot navigation for multiple images */
+      if (imgArr.length > 1) {
+        var dotsDiv = document.createElement("div");
+        dotsDiv.className = "hero-dots";
+        imgArr.forEach(function(src, idx) {
+          var dot = document.createElement("button");
+          dot.className = "hero-dot" + (idx === 0 ? " active" : "");
+          dot.style.borderColor = z.color;
+          if (idx === 0) dot.style.background = z.color;
+          dot.addEventListener("click", function() {
+            imgEl.src = src;
+            document.querySelectorAll(".hero-dot").forEach(function(d) {
+              d.classList.remove("active");
+              d.style.background = "transparent";
+            });
+            dot.classList.add("active");
+            dot.style.background = z.color;
+          });
+          dotsDiv.appendChild(dot);
+        });
+        heroEl.appendChild(dotsDiv);
+      }
+    } else {
+      heroEl.style.fontSize = "4.5rem";
+      heroEl.textContent = ex.emoji;
+    }
+
+    /* YouTube embed below image */
+    if (embedUrl) {
+      var ytWrap = document.createElement("div");
+      ytWrap.className = "popup-yt-wrap";
+      ytWrap.innerHTML = '<iframe src="' + embedUrl + '" class="popup-yt-frame" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>';
+      heroEl.appendChild(ytWrap);
+    }
+  } else {
+    heroEl.style.fontSize = "4.5rem";
+    heroEl.textContent = z.emoji;
+  }
+
+  /* ── Language tabs (only when exhibit data exists) ── */
+  var langTabsHTML = "";
+  if (ex) {
+    langTabsHTML =
+      '<div class="lang-tabs" id="popupLangTabs">' +
+        '<button class="lang-tab' + (selectedLanguage !== "english" ? " active" : "") + '" data-lang="khmer" style="--tc:' + z.color + '">ខ្មែរ</button>' +
+        '<button class="lang-tab' + (selectedLanguage === "english" ? " active" : "") + '" data-lang="english" style="--tc:' + z.color + '">English</button>' +
+      '</div>';
+  }
+
+  /* ── Audio row ── */
+  var audioHTML =
+    '<div class="audio-row" id="audioRowEl" style="border-color:' + z.color + '55">' +
+      '<div class="audio-play-icon" id="audioPlayIcon">🔊</div>' +
+      '<div class="audio-info"><div class="audio-title">' + t("audioGuide") + '</div>' +
+      '<div class="audio-sub">' + t("tapToHear") + '</div></div>' +
+      '<div class="wave">' +
+        '<div class="wb" style="background:' + z.color + '"></div>' +
+        '<div class="wb" style="background:' + z.color + '"></div>' +
+        '<div class="wb" style="background:' + z.color + '"></div>' +
+        '<div class="wb" style="background:' + z.color + '"></div>' +
+      '</div>' +
+    '</div>';
+
+  /* ── Slides ── */
+  var slidesHTML = "";
   if (z.slides && z.slides.length > 0) {
     slidesHTML = '<div class="section-label">' + t("infoSlides") + '</div><div class="slides-row">';
     z.slides.forEach(function(s, i) {
-      slidesHTML += '<div class="slide-card" data-zone="' + key + '" data-idx="' + i + '" style="border-color:' + z.color + '33">' +
-        '<div class="sc-icon">' + s.icon + '</div>' +
-        '<div class="sc-title">' + s.title + '</div>' +
-        '<div class="sc-sub">' + t("tapToExpand") + '</div></div>';
+      slidesHTML +=
+        '<div class="slide-card" data-zone="' + key + '" data-idx="' + i + '" style="border-color:' + z.color + '33">' +
+          '<div class="sc-icon">' + s.icon + '</div>' +
+          '<div class="sc-title">' + s.title + '</div>' +
+          '<div class="sc-sub">' + t("tapToExpand") + '</div>' +
+        '</div>';
     });
     slidesHTML += '</div>';
   }
 
-  var tagsHTML = '';
-  if (z.tags && z.tags.length > 0) {
+  /* ── Tags ── */
+  var tagsArr = (ex && ex.tags) ? ex.tags : (z.tags || []);
+  var tagsHTML = "";
+  if (tagsArr.length > 0) {
     tagsHTML = '<div class="tags">';
-    z.tags.forEach(function(tag){ tagsHTML += '<span class="tag" style="color:' + z.color + ';border-color:' + z.color + '44">' + tag + '</span>'; });
+    tagsArr.forEach(function(tag) {
+      tagsHTML += '<span class="tag" style="color:' + z.color + ';border-color:' + z.color + '44">' + tag + '</span>';
+    });
     tagsHTML += '</div>';
   }
 
+  /* ── Assemble body ── */
   document.getElementById("popupBody").innerHTML =
-    '<p class="popup-desc">' + zoneDesc + '</p>' +
+    langTabsHTML +
+    '<p class="popup-desc" id="popupDesc">' + zoneDesc + '</p>' +
     audioHTML + slidesHTML + tagsHTML;
 
-  document.getElementById("audioRowEl").addEventListener("click", function(){
+  /* ── Language tab click handlers ── */
+  if (ex) {
+    document.querySelectorAll(".lang-tab").forEach(function(tab) {
+      tab.addEventListener("click", function() {
+        document.querySelectorAll(".lang-tab").forEach(function(t) { t.classList.remove("active"); });
+        tab.classList.add("active");
+        var chosenLang = tab.getAttribute("data-lang");
+        document.getElementById("popupDesc").textContent =
+          chosenLang === "english" ? ex.descEng : ex.descKhm;
+        /* switch TTS language too */
+        stopSpeech();
+      });
+    });
+  }
+
+  /* ── Audio row click: TTS using Web Speech API ── */
+  document.getElementById("audioRowEl").addEventListener("click", function() {
     var audioFile = selectedLanguage === "english" ? z.audioFileEn : z.audioFile;
-    speakText(z.audio, audioFile);
+    if (audioFile) {
+      speakText(null, audioFile);
+    } else if (ex) {
+      /* fallback to TTS */
+      var activeLangTab = document.querySelector(".lang-tab.active");
+      var ttsLang = activeLangTab ? activeLangTab.getAttribute("data-lang") : selectedLanguage;
+      var ttsText = ttsLang === "english" ? ex.descEng : ex.descKhm;
+      var langCode = ttsLang === "english" ? "en-US" : "km-KH";
+      speakTTS(ttsText, langCode);
+    } else {
+      speakText(z.audio, null);
+    }
   });
-  document.querySelectorAll(".slide-card").forEach(function(card){
-    card.addEventListener("click", function(){
+
+  /* ── Slide cards ── */
+  document.querySelectorAll(".slide-card").forEach(function(card) {
+    card.addEventListener("click", function() {
       openSlide(card.getAttribute("data-zone"), parseInt(card.getAttribute("data-idx")));
     });
   });
@@ -322,23 +458,37 @@ function closePopup() {
 
 /* ── AUDIO PLAYBACK ── */
 var currentAudio = null;
+var currentUtterance = null;
 
 function speakText(text, audioFile) {
   stopSpeech();
-  
   if (audioFile) {
-    console.log("🎵 Playing audio:", audioFile);
     var audio = new Audio(audioFile);
     currentAudio = audio;
-    audio.onerror = function() {
-      console.error("❌ Audio file not found:", audioFile);
-      alert("Audio file not found: " + audioFile);
-    };
+    audio.onerror = function() { console.error("Audio file not found:", audioFile); };
     audio.play();
-    return;
   }
-  
-  console.log("⚠️ No audio file configured for this zone");
+}
+
+function speakTTS(text, langCode) {
+  stopSpeech();
+  if (!window.speechSynthesis || !text) return;
+  var utter = new SpeechSynthesisUtterance(text);
+  utter.lang = langCode;
+  utter.rate = 0.9;
+  if (langCode === "km-KH") {
+    var voices = window.speechSynthesis.getVoices();
+    var kmVoice = voices.find(function(v) { return v.lang.startsWith("km"); });
+    if (kmVoice) utter.voice = kmVoice;
+  }
+  currentUtterance = utter;
+  var icon = document.getElementById("audioPlayIcon");
+  if (icon) icon.textContent = "⏹";
+  utter.onend = function() {
+    currentUtterance = null;
+    if (icon) icon.textContent = "🔊";
+  };
+  window.speechSynthesis.speak(utter);
 }
 
 function stopSpeech() {
@@ -347,6 +497,8 @@ function stopSpeech() {
     currentAudio.currentTime = 0;
     currentAudio = null;
   }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  currentUtterance = null;
 }
 
 /* ── SLIDE MODAL ── */
