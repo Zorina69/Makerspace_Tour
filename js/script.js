@@ -37,7 +37,28 @@ function updateUILanguage() {
   
   // Rebuild zone strip with new language
   var strip = document.getElementById("zoneStrip");
+  if (strip) {
+    buildStrip();
+  }
+  
   console.log("✅ Language & Font updated to:", selectedLanguage);
+}
+
+/* ── ZONE STRIP ── */
+function buildStrip() {
+  var strip = document.getElementById("zoneStrip");
+  strip.innerHTML = "";
+  Object.keys(ZONES).forEach(function(key) {
+    var z = ZONES[key];
+    var zoneName = t(key + ".name");
+    var btn = document.createElement("button");
+    btn.className = "zone-pill";
+    btn.textContent = z.emoji + " " + zoneName.toUpperCase();
+    btn.style.color = z.color;
+    btn.style.borderColor = z.color + "55";
+    btn.addEventListener("click", function(){ openZone(key); });
+    strip.appendChild(btn);
+  });
 }
 
 /* ── EVENT LISTENERS ── */
@@ -62,6 +83,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(function(){
       document.getElementById("splash").style.display = "none";
       document.getElementById("ar-scene-container").classList.add("visible");
+      buildStrip();
       initAR();
     }, 600);
   });
@@ -171,20 +193,17 @@ function scanLoop() {
     });
     
     if (code) {
-      var scannedData = code.data.trim();
-      console.log("📱 QR Scanned:", scannedData);
+      var zoneKey = code.data.trim().toLowerCase();
+      console.log("📱 QR Scanned:", code.data, "→", zoneKey);
       
-      var exhibitKey = scannedData.toUpperCase();
-      
-      // Check if it's an exhibit
-      if (EXHIBITS[exhibitKey]) {
-        console.log("✅ Exhibit found:", exhibitKey);
+      if (ZONES[zoneKey]) {
+        console.log("✅ Zone found:", zoneKey);
         
-        if (lastDetectedQR !== exhibitKey) {
-          lastDetectedQR = exhibitKey;
-          var exhibitName = EXHIBITS[exhibitKey].name;
-          showDetectedBadge(exhibitName);
-          openExhibit(exhibitKey);
+        if (lastDetectedQR !== zoneKey) {
+          lastDetectedQR = zoneKey;
+          var zoneName = t(zoneKey + ".name");
+          showDetectedBadge(zoneName);
+          openZone(zoneKey);
           
           var rec = document.querySelector(".hud-rec span");
           if (rec) rec.textContent = t("detected");
@@ -228,48 +247,77 @@ function showDetectedBadge(name) {
   badgeTimer = setTimeout(function(){ badge.classList.remove("show"); }, 2500);
 }
 
-function closePopup() {
-  document.getElementById("popup").classList.remove("open");
-  stopSpeech();
-  activeZone = null;
-}
-
-/* ── EXHIBIT POPUP ── */
-function openExhibit(key) {
-  var e = EXHIBITS[key];
-  if (!e) return;
+/* ── ZONE POPUP ── */
+function openZone(key) {
+  var z = ZONES[key];
+  if (!z) return;
   activeZone = key;
   
-  // Get color based on exhibit category
-  var color = CATEGORY_COLORS[e.category] || "#888888";
-  
-  var exhibitName = e.name;
-  var exhibitDesc = selectedLanguage === "english" ? e.descEng : e.descKhm;
-  var categoryName = e.category;
+  var zoneName = t(key + ".name");
+  var zoneTag = t(key + ".tag");
+  var zoneDesc = t(key + ".desc");
 
-  var bgC = color + "18";
+  var bgC = z.color + "18";
   document.getElementById("popupHead").innerHTML =
-    '<div class="popup-icon-box" style="background:' + bgC + ';border:1px solid ' + color + '44">' + e.emoji + '</div>' +
-    '<div><div class="popup-zone-name" style="color:' + color + '">' + exhibitName + '</div>' +
-    '<div class="popup-zone-tag" style="color:' + color + '88">' + categoryName.toUpperCase() + ' EXHIBIT</div></div>' +
+    '<div class="popup-icon-box" style="background:' + bgC + ';border:1px solid ' + z.color + '44">' + z.emoji + '</div>' +
+    '<div><div class="popup-zone-name" style="color:' + z.color + '">' + zoneName + '</div>' +
+    '<div class="popup-zone-tag">' + zoneTag + ' ZONE</div></div>' +
     '<button class="popup-close" id="popupCloseBtn">&#10005;</button>';
   document.getElementById("popupCloseBtn").addEventListener("click", closePopup);
 
   document.getElementById("popupHero").style.background = bgC;
-  document.getElementById("popupHero").textContent = e.emoji;
+  document.getElementById("popupHero").textContent = z.emoji;
+
+  var audioHTML = '<div class="audio-row" id="audioRowEl" style="border-color:' + z.color + '55">' +
+    '<div class="audio-play-icon">🔊</div>' +
+    '<div class="audio-info"><div class="audio-title">' + t("audioGuide") + '</div><div class="audio-sub">' + t("tapToHear") + '</div></div>' +
+    '<div class="wave">' +
+    '<div class="wb" style="background:' + z.color + '"></div>' +
+    '<div class="wb" style="background:' + z.color + '"></div>' +
+    '<div class="wb" style="background:' + z.color + '"></div>' +
+    '<div class="wb" style="background:' + z.color + '"></div>' +
+    '</div></div>';
+
+  var slidesHTML = '';
+  if (z.slides && z.slides.length > 0) {
+    slidesHTML = '<div class="section-label">' + t("infoSlides") + '</div><div class="slides-row">';
+    z.slides.forEach(function(s, i) {
+      slidesHTML += '<div class="slide-card" data-zone="' + key + '" data-idx="' + i + '" style="border-color:' + z.color + '33">' +
+        '<div class="sc-icon">' + s.icon + '</div>' +
+        '<div class="sc-title">' + s.title + '</div>' +
+        '<div class="sc-sub">' + t("tapToExpand") + '</div></div>';
+    });
+    slidesHTML += '</div>';
+  }
 
   var tagsHTML = '';
-  if (e.tags && e.tags.length > 0) {
+  if (z.tags && z.tags.length > 0) {
     tagsHTML = '<div class="tags">';
-    e.tags.forEach(function(tag){ tagsHTML += '<span class="tag" style="color:' + color + ';border-color:' + color + '44">' + tag + '</span>'; });
+    z.tags.forEach(function(tag){ tagsHTML += '<span class="tag" style="color:' + z.color + ';border-color:' + z.color + '44">' + tag + '</span>'; });
     tagsHTML += '</div>';
   }
 
   document.getElementById("popupBody").innerHTML =
-    '<p class="popup-desc">' + exhibitDesc + '</p>' +
-    tagsHTML;
+    '<p class="popup-desc">' + zoneDesc + '</p>' +
+    audioHTML + slidesHTML + tagsHTML;
+
+  document.getElementById("audioRowEl").addEventListener("click", function(){
+    var audioFile = selectedLanguage === "english" ? z.audioFileEn : z.audioFile;
+    speakText(z.audio, audioFile);
+  });
+  document.querySelectorAll(".slide-card").forEach(function(card){
+    card.addEventListener("click", function(){
+      openSlide(card.getAttribute("data-zone"), parseInt(card.getAttribute("data-idx")));
+    });
+  });
 
   document.getElementById("popup").classList.add("open");
+}
+
+function closePopup() {
+  document.getElementById("popup").classList.remove("open");
+  stopSpeech();
+  activeZone = null;
 }
 
 /* ── AUDIO PLAYBACK ── */
