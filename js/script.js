@@ -35,31 +35,31 @@ function updateUILanguage() {
     document.body.classList.remove("lang-khmer");
   }
   
-  // Rebuild zone strip with new language
-  var strip = document.getElementById("zoneStrip");
-  if (strip) {
-    buildStrip();
-  }
+  // // Rebuild zone strip with new language
+  // var strip = document.getElementById("zoneStrip");
+  // if (strip) {
+  //   buildStrip();
+  // }
   
   console.log("✅ Language & Font updated to:", selectedLanguage);
 }
 
-/* ── ZONE STRIP ── */
-function buildStrip() {
-  var strip = document.getElementById("zoneStrip");
-  strip.innerHTML = "";
-  Object.keys(ZONES).forEach(function(key) {
-    var z = ZONES[key];
-    var zoneName = t(key + ".name");
-    var btn = document.createElement("button");
-    btn.className = "zone-pill";
-    btn.textContent = z.emoji + " " + zoneName.toUpperCase();
-    btn.style.color = z.color;
-    btn.style.borderColor = z.color + "55";
-    btn.addEventListener("click", function(){ openZone(key); });
-    strip.appendChild(btn);
-  });
-}
+// /* ── ZONE STRIP ── */
+// function buildStrip() {
+//   var strip = document.getElementById("zoneStrip");
+//   strip.innerHTML = "";
+//   Object.keys(ZONES).forEach(function(key) {
+//     var z = ZONES[key];
+//     var zoneName = t(key + ".name");
+//     var btn = document.createElement("button");
+//     btn.className = "zone-pill";
+//     btn.textContent = z.emoji + " " + zoneName.toUpperCase();
+//     btn.style.color = z.color;
+//     btn.style.borderColor = z.color + "55";
+//     btn.addEventListener("click", function(){ openZone(key); });
+//     strip.appendChild(btn);
+//   });
+// }
 
 /* ── EVENT LISTENERS ── */
 document.addEventListener("DOMContentLoaded", function() {
@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(function(){
       document.getElementById("splash").style.display = "none";
       document.getElementById("ar-scene-container").classList.add("visible");
-      buildStrip();
+      // buildStrip();
       initAR();
     }, 600);
   });
