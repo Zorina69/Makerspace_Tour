@@ -184,7 +184,7 @@ function scanLoop() {
     scannerCanvas.width = scannerVideo.videoWidth;
     scannerCanvas.height = scannerVideo.videoHeight;
     
-    var ctx = scannerCanvas.getContext("2d");
+    var ctx = scannerCanvas.getContext("2d", { willReadFrequently: true });
     ctx.drawImage(scannerVideo, 0, 0);
     
     var imageData = ctx.getImageData(0, 0, scannerCanvas.width, scannerCanvas.height);
