@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Makerspace AR Tour</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ── SPLASH SCREEN ── -->
+<div id="splash">
+  <div class="grid-bg"></div>
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+  
+  <div class="splash-inner">
+    <div class="badge">AR IMAGE SCANNER</div>
+    
+    <h1 class="main-title">MAKER SPACE AR TOUR</h1>
+    <p class="sub">Scan QR codes to explore each zone</p>
+    
+    <div class="how-box">
+      <div class="how-title">// HOW IT WORKS</div>
+      <div class="how-step"><div class="step-num">1</div><span>Print or display QR codes for each zone</span></div>
+      <div class="how-step"><div class="step-num">2</div><span>Tap START and allow camera access</span></div>
+      <div class="how-step"><div class="step-num">3</div><span>Point camera at any QR code — zone info pops up instantly</span></div>
+      <div class="how-step"><div class="step-num">4</div><span>Tap any label to read info or hear the audio guide</span></div>
+    </div>
+    
+    <div class="lang-switcher">
+      <button class="lang-btn active" id="langKhmerBtn">ខ្មែរ</button>
+      <button class="lang-btn" id="langEnglishBtn">English</button>
+    </div>
+    
+    <button class="scan-btn" id="startBtn">OPEN CAMERA</button>
+    <div class="scan-hint">// allow camera when prompted</div>
+  </div>
+</div>
+
+<!-- ── AR SCENE CONTAINER ── -->
+<div id="ar-scene-container">
+  <div id="qr-reader" style="position:fixed;inset:0;z-index:1"></div>
+  
+  <!-- ── HUD OVERLAY ── -->
+  <div id="hud">
+    <div id="hudTop">
+      <span class="hud-title">MAKERSPACE AR</span>
+      <div class="hud-rec"><span class="rec-dot"></span><span>SCANNING</span></div>
+    </div>
+    
+    <div class="scan-frame">
+      <div class="sf-corner tl"></div>
+      <div class="sf-corner tr"></div>
+      <div class="sf-corner bl"></div>
+      <div class="sf-corner br"></div>
+      <div class="scan-line"></div>
+      <div class="scan-label">POINT AT QR CODE</div>
+    </div>
+    
+    <div id="detectedBadge"></div>
+    
+    <div id="hudBottom">
+      <div class="zone-strip" id="zoneStrip"></div>
+      <button class="stop-btn" id="stopBtn">BACK TO MENU</button>
+    </div>
+  </div>
+  
+  <!-- ── ZONE POPUP ── -->
+  <div id="popup">
+    <div class="popup-sheet" id="popupSheet">
+      <div class="handle"></div>
+      <div class="popup-head" id="popupHead"></div>
+      <div class="popup-hero" id="popupHero"></div>
+      <div class="popup-body" id="popupBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE MODAL ── -->
+<div id="slideModal">
+  <div class="sm-inner">
+    <button class="sm-close" id="smClose">×</button>
+    <div class="sm-icon" id="smIcon"></div>
+    <div class="sm-title" id="smTitle"></div>
+    <div class="sm-body" id="smBody"></div>
+  </div>
+</div>
+
+<!-- ── SCRIPTS ── -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="js/translations.js"></script>
+<script src="js/data.js"></script>
+<script src="js/script.js"></script>
+
+</body>
+</html>
