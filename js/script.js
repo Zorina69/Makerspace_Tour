@@ -12,10 +12,13 @@ function updateUILanguage() {
   document.querySelector(".sub").textContent = t("sub");
   document.querySelector(".how-title").textContent = t("howTitle");
   var steps = document.querySelectorAll(".how-step span");
-  steps[0].textContent = t("step1");
-  steps[1].textContent = t("step2");
-  steps[2].textContent = t("step3");
-  steps[3].textContent = t("step4");
+  if (steps.length >= 4) {
+    steps[0].textContent = t("step1");
+    steps[1].textContent = t("step2");
+    steps[2].textContent = t("step3");
+    steps[3].textContent = t("step4");
+  }
+  
   document.getElementById("startBtn").textContent = t("scanBtn");
   document.querySelector(".scan-hint").textContent = t("scanHint");
   
@@ -37,16 +40,16 @@ function updateUILanguage() {
   
   // Rebuild zone strip with new language
   var strip = document.getElementById("zoneStrip");
-  if (strip) {
-    buildStrip();
-  }
+  if (strip) buildStrip();
   
   console.log("✅ Language & Font updated to:", selectedLanguage);
 }
 
- /* ── ZONE STRIP ── */
+/* ── ZONE STRIP ── */
 function buildStrip() {
   var strip = document.getElementById("zoneStrip");
+  if (!strip) return;
+  
   strip.innerHTML = "";
   Object.keys(EXHIBITS).forEach(function(key) {
     var ex = EXHIBITS[key];
@@ -112,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function() {
     window.speechSynthesis.onvoiceschanged = function(){ window.speechSynthesis.getVoices(); };
   }
   
-  // Initialize UI with default Khmer language and font
+  // Initialize UI with default Khmer language
   document.body.classList.add("lang-khmer");
   updateUILanguage();
 });
@@ -123,6 +126,7 @@ var lastDetectedQR = null;
 var qrCooldownTimer = null;
 var scannerCanvas = null;
 var scannerVideo = null;
+var scanCtx = null;
 
 function initAR() {
   console.log("🔍 Initializing QR Scanner...");
@@ -172,8 +176,6 @@ function startQRScanner() {
   });
 }
 
-var scanCtx = null; // create context once, outside the loop
-
 function scanLoop() {
   if (!scannerCanvas || !scannerVideo) return;
   
@@ -197,12 +199,10 @@ function scanLoop() {
     });
     
     if (code) {
-      var zoneKey = code.data.trim().toUpperCase(); // EXHIBITS keys are uppercase: "MS-R-001"
+      var zoneKey = code.data.trim().toUpperCase();
       console.log("📱 QR Scanned:", code.data, "→", zoneKey);
       
       if (EXHIBITS[zoneKey]) {
-        console.log("✅ Exhibit found:", zoneKey);
-        
         if (lastDetectedQR !== zoneKey) {
           lastDetectedQR = zoneKey;
           showDetectedBadge(EXHIBITS[zoneKey].name);
@@ -232,7 +232,6 @@ function stopAR() {
     scannerVideo.srcObject.getTracks().forEach(function(track) {
       track.stop();
     });
-    console.log("✓ Camera stream stopped");
   }
   
   closePopup();
@@ -271,6 +270,7 @@ function openExhibit(key) {
     '<div><div class="popup-zone-name" style="color:' + color + '">' + ex.name + '</div>' +
     '<div class="popup-zone-tag">' + ex.category + '</div></div>' +
     '<button class="popup-close" id="popupCloseBtn">&#10005;</button>';
+  
   document.getElementById("popupCloseBtn").addEventListener("click", closePopup);
 
   /* ── Hero: full-width swiper + YouTube ── */
@@ -282,7 +282,6 @@ function openExhibit(key) {
   var embedUrl = getYouTubeEmbedUrl(ex.youtubeVideo);
 
   if (imgArr.length > 0) {
-    /* swiper container */
     var swiper = document.createElement("div");
     swiper.className = "hero-swiper";
     swiper.id = "heroSwiper";
@@ -293,15 +292,12 @@ function openExhibit(key) {
       var img = document.createElement("img");
       img.src = src;
       img.alt = ex.name;
-      img.onerror = function() {
-        slide.style.display = "none";
-      };
+      img.onerror = function() { slide.style.display = "none"; };
       slide.appendChild(img);
       swiper.appendChild(slide);
     });
     heroEl.appendChild(swiper);
 
-    /* dots — only if more than 1 image */
     if (imgArr.length > 1) {
       var dotsDiv = document.createElement("div");
       dotsDiv.className = "hero-dots";
@@ -315,7 +311,6 @@ function openExhibit(key) {
       });
       heroEl.appendChild(dotsDiv);
 
-      /* sync dots to swipe */
       swiper.addEventListener("scroll", function() {
         var idx = Math.round(swiper.scrollLeft / swiper.offsetWidth);
         dotsDiv.querySelectorAll(".hero-dot").forEach(function(d, i) {
@@ -324,7 +319,6 @@ function openExhibit(key) {
         });
       });
 
-      /* tap dot → scroll to slide */
       dotsDiv.querySelectorAll(".hero-dot").forEach(function(dot, idx) {
         dot.addEventListener("click", function() {
           swiper.scrollTo({ left: idx * swiper.offsetWidth, behavior: "smooth" });
@@ -332,7 +326,6 @@ function openExhibit(key) {
       });
     }
   } else {
-    /* no image — show emoji */
     heroEl.style.fontSize = "4.5rem";
     heroEl.style.minHeight = "120px";
     heroEl.style.display = "flex";
@@ -341,16 +334,13 @@ function openExhibit(key) {
     heroEl.textContent = ex.emoji;
   }
 
-  /* YouTube below images */
   if (embedUrl) {
     var ytWrap = document.createElement("div");
     ytWrap.className = "popup-yt-wrap";
-    ytWrap.innerHTML =
-      '<iframe src="' + embedUrl + '" class="popup-yt-frame"' +
-      ' allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"' +
-      ' allowfullscreen></iframe>';
+    ytWrap.innerHTML = '<iframe src="' + embedUrl + '" class="popup-yt-frame" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>';
     heroEl.appendChild(ytWrap);
   }
+
   /* ── Language tabs ── */
   var langTabsHTML =
     '<div class="lang-tabs" id="popupLangTabs">' +
@@ -401,15 +391,19 @@ function openExhibit(key) {
     });
   });
 
-  /* ── Audio: TTS fallback ── */
+  /* ── Audio click handler ── */
   document.getElementById("audioRowEl").addEventListener("click", function() {
     var activeLangTab = document.querySelector(".lang-tab.active");
-    var ttsLang = activeLangTab ? activeLangTab.getAttribute("data-lang") : selectedLanguage;
-    var ttsText = ttsLang === "english" ? ex.descEng : ex.descKhm;
-    var langCode = ttsLang === "english" ? "en-US" : "km-KH";
-    speakTTS(ttsText, langCode);
+    var lang = activeLangTab ? activeLangTab.getAttribute("data-lang") : selectedLanguage;
+
+    if (lang === "english") {
+      speakText(ex.descEng, null, "english");
+    } else {
+      speakText("", ex.audio, "khmer");
+    }
   });
 
+  // **Fixed**: Open the popup
   document.getElementById("popup").classList.add("open");
 }
 
@@ -423,35 +417,43 @@ function closePopup() {
 var currentAudio = null;
 var currentUtterance = null;
 
-function speakText(text, audioFile) {
+function speakText(text, audioFile, langCode) {
   stopSpeech();
-  if (audioFile) {
+
+  if (langCode === "khmer") {
+    if (!audioFile) return;
     var audio = new Audio(audioFile);
     currentAudio = audio;
-    audio.onerror = function() { console.error("Audio file not found:", audioFile); };
-    audio.play();
-  }
-}
 
-function speakTTS(text, langCode) {
-  stopSpeech();
-  if (!window.speechSynthesis || !text) return;
-  var utter = new SpeechSynthesisUtterance(text);
-  utter.lang = langCode;
-  utter.rate = 0.9;
-  if (langCode === "km-KH") {
-    var voices = window.speechSynthesis.getVoices();
-    var kmVoice = voices.find(function(v) { return v.lang.startsWith("km"); });
-    if (kmVoice) utter.voice = kmVoice;
+    audio.onerror = function () {
+      console.error("Audio file not found:", audioFile);
+    };
+
+    audio.play().catch(function(e) {
+      console.error("Audio playback failed:", e);
+    });
+    return;
   }
-  currentUtterance = utter;
-  var icon = document.getElementById("audioPlayIcon");
-  if (icon) icon.textContent = "⏹";
-  utter.onend = function() {
-    currentUtterance = null;
-    if (icon) icon.textContent = "🔊";
-  };
-  window.speechSynthesis.speak(utter);
+
+  if (langCode === "english") {
+    if (!window.speechSynthesis || !text) return;
+
+    var utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "en-US";
+    utter.rate = 0.9;
+
+    currentUtterance = utter;
+
+    var icon = document.getElementById("audioPlayIcon");
+    if (icon) icon.textContent = "⏹";
+
+    utter.onend = function () {
+      currentUtterance = null;
+      if (icon) icon.textContent = "🔊";
+    };
+
+    window.speechSynthesis.speak(utter);
+  }
 }
 
 function stopSpeech() {
@@ -467,10 +469,8 @@ function stopSpeech() {
 /* ── SLIDE MODAL ── */
 function openSlide(zoneKey, idx) {
   var z = ZONES[zoneKey];
-  if (!z.slides || !z.slides[idx]) {
-    console.warn("Slide not found:", zoneKey, idx);
-    return;
-  }
+  if (!z || !z.slides || !z.slides[idx]) return;
+  
   var s = z.slides[idx];
   document.getElementById("smIcon").textContent = s.icon;
   document.getElementById("smTitle").style.color = z.color;

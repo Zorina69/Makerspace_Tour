@@ -341,7 +341,7 @@ a-scene{width:100%!important;height:100%!important}
 /* ── HERO: full-width image swiper ── */
 .popup-hero {
   width: 100%;
-  min-height: 0;
+  height: 100%;
   display: block;
   position: relative;
   overflow: hidden;
