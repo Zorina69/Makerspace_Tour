@@ -12,11 +12,10 @@ function updateUILanguage() {
   document.querySelector(".sub").textContent = t("sub");
   document.querySelector(".how-title").textContent = t("howTitle");
   var steps = document.querySelectorAll(".how-step span");
-  if (steps.length >= 4) {
+  if (steps.length >= 3) {
     steps[0].textContent = t("step1");
     steps[1].textContent = t("step2");
     steps[2].textContent = t("step3");
-    steps[3].textContent = t("step4");
   }
   
   document.getElementById("startBtn").textContent = t("scanBtn");
